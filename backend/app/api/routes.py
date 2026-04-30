@@ -1,8 +1,17 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.models.schemas import AnalyzeRequest, AnalyzeResponse, CitationStyle, HealthResponse
+from app.models.workbench import (
+    ManuscriptReviewRequest,
+    ManuscriptReviewResponse,
+    MatrixExtractRequest,
+    MatrixExtractResponse,
+    TraceableWritingRequest,
+    TraceableWritingResponse,
+)
 from app.services.checker import analyze_references
 from app.services.parsers import extract_text_from_docx, extract_text_from_pdf
+from app.services.workbench import manuscript_review, matrix_extract, traceable_writing
 
 router = APIRouter()
 
@@ -46,3 +55,21 @@ async def analyze_upload(
         raise HTTPException(status_code=422, detail="未能从文件中提取到文本")
 
     return await analyze_references(text, style)
+
+
+@router.post("/workbench/trace", response_model=TraceableWritingResponse)
+async def workbench_trace(req: TraceableWritingRequest) -> TraceableWritingResponse:
+    """可追溯写作：将段落与用户自备证据材料做对齐分析（需 OPENAI_API_KEY）。"""
+    return await traceable_writing(req)
+
+
+@router.post("/workbench/matrix/extract", response_model=MatrixExtractResponse)
+async def workbench_matrix_extract(req: MatrixExtractRequest) -> MatrixExtractResponse:
+    """综述矩阵：从多篇文献片段抽取结构化字段（需 OPENAI_API_KEY）。"""
+    return await matrix_extract(req)
+
+
+@router.post("/workbench/review/manuscript", response_model=ManuscriptReviewResponse)
+async def workbench_review_manuscript(req: ManuscriptReviewRequest) -> ManuscriptReviewResponse:
+    """审稿/导师模式：基于正文与参考文献列表给出结构化审阅意见（需 OPENAI_API_KEY）。"""
+    return await manuscript_review(req)

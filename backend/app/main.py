@@ -6,11 +6,12 @@ from app.config import settings
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
-origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+_use_wildcard = not _origins or any(o == "*" for o in _origins)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins or ["*"],
-    allow_credentials=True,
+    allow_origins=["*"] if _use_wildcard else _origins,
+    allow_credentials=not _use_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )
